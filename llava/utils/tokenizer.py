@@ -172,6 +172,19 @@ def preprocess_conversation(
 
 
 def infer_stop_tokens(tokenizer: transformers.PreTrainedTokenizer) -> List[str]:
+    if not hasattr(tokenizer, 'chat_template') or tokenizer.chat_template is None:
+        # Vicuna v1 风格的对话模板
+        vicuna_v1_template = """{% if messages[0]['role'] == 'system' %}{% set system_message = messages[0]['content'] %}{% else %}{% set system_message = '' %}{% endif %}
+A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
+
+{{ system_message }}
+{% for message in messages %}
+{% if message['role'] == 'system' %}{% continue %}{% endif %}
+{% if message['role'] == 'user' %}USER: {{ message['content'] }}
+ASSISTANT: {% else %}{{ message['content'] }}
+{% endif %}
+{% endfor %}"""
+        tokenizer.chat_template = vicuna_v1_template
     _maybe_add_sentinel_token(tokenizer)
     template = tokenize_conversation(DUMMY_CONVERSATION, tokenizer, overrides={"gpt": SENTINEL_TOKEN})
 
